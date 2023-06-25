@@ -33,27 +33,25 @@
 
 <body class="d-flex h-100 text-center text-white bg-white">
 <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column align-items-center justify-content-center">
-    <main class="main">
         <h1>Enter nickname to Join chat room</h1>
         <p class="description">
             This web application is a web chat app implemented using asynchronous programming, where multiple users can
             participate in a single chat room.
         </p>
-        <input type="text" id="nickname"/>
+        <form method="post" action="/">
+        <input type="text" id="nickname" name="nickname" placeholder="Enter your nickname"/>
         <p class="join">
-            <a class="btn btn-lg btn-secondary fw-bold border-white" onclick="redirectToChatPage()">Join!</a>
+            <button type="submit" class="btn btn-lg btn-secondary fw-bold border-white" onclick="redirectToChatPage()">Join!</button>
         </p>
+        </form>
         <script>
             function redirectToChatPage() {
                 let nickname = document.getElementById("nickname").value;
-                if (nickname.trim() !== "") {
-                    window.location.href = "/chat";
-                } else {
+                if (nickname.trim() === ""){
                     alert("Please enter a nickname!");
                 }
             }
         </script>
-    </main>
     <footer class="footer">
         <p>developed by <a href="https://github.com/kimjinmyeong/webchat-app" target="_blank" class="text-black">Jinmyeong Kim</a></p>
     </footer>
