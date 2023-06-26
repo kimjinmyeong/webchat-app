@@ -4,7 +4,6 @@
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
 <link href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" rel="stylesheet">
-<link href="../static/chat.css" rel="stylesheet">
 <style>
     .card-bordered {
         border: 1px solid #ebebeb;
@@ -322,31 +321,29 @@
 
                     <div class="ps-container ps-theme-default ps-active-y" id="chat-content"
                          style="overflow-y: scroll !important; height:400px !important;">
-                        <div class="media media-chat">
-                            <img class="avatar" src="https://img.icons8.com/color/36/000000/administrator-male.png"
-                                 alt="...">
-                            <div class="media-body">
-                                <p>Hi</p>
-                                <p>How are you ...???</p>
-                                <p>What are you doing tomorrow?<br> Can we come up a bar?</p>
-                                <p class="meta">
-                                    <time datetime="2018">23:58</time>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="media media-meta-day">Today</div>
-
-                        <div class="media media-chat media-chat-reverse">
-                            <div class="media-body">
-                                <p>Hiii, I'm good.</p>
-                                <p>How are you doing?</p>
-                                <p>Long time no see! Tomorrow office. will be free on sunday.</p>
-                                <p class="meta">
-                                    <time datetime="2018">00:06</time>
-                                </p>
-                            </div>
-                        </div>
+                        <!--                        <div class="media media-chat">-->
+                        <!--                            <img class="avatar" src="https://img.icons8.com/color/36/000000/administrator-male.png"-->
+                        <!--                                 alt="...">-->
+                        <!--                            <div class="media-body">-->
+                        <!--                                <p>Hi</p>-->
+                        <!--                                <p>How are you ...???</p>-->
+                        <!--                                <p>What are you doing tomorrow?<br> Can we come up a bar?</p>-->
+                        <!--                                <p class="meta">-->
+                        <!--                                    <time datetime="2018">23:58</time>-->
+                        <!--                                </p>-->
+                        <!--                            </div>-->
+                        <!--                        </div>-->
+                        <!--                        <div class="media media-meta-day">Today</div>-->
+                        <!--                        <div class="media media-chat media-chat-reverse">-->
+                        <!--                            <div class="media-body">-->
+                        <!--                                <p>Hiii, I'm good.</p>-->
+                        <!--                                <p>How are you doing?</p>-->
+                        <!--                                <p>Long time no see! Tomorrow office. will be free on sunday.</p>-->
+                        <!--                                <p class="meta">-->
+                        <!--                                    <time datetime="2018">00:06</time>-->
+                        <!--                                </p>-->
+                        <!--                            </div>-->
+                        <!--                        </div>-->
                         <div class="ps-scrollbar-x-rail" style="left: 0px; bottom: 0px;">
                             <div class="ps-scrollbar-x" tabindex="0" style="left: 0px; width: 0px;"></div>
                         </div>
@@ -354,13 +351,42 @@
                             <div class="ps-scrollbar-y" tabindex="0" style="top: 0px; height: 2px;"></div>
                         </div>
                     </div>
-
+                    <!-- send message -->
                     <div class="publisher bt-1 border-light">
                         <img class="avatar avatar-xs"
                              src="https://img.icons8.com/color/36/000000/administrator-male.png" alt="...">
-                        <input class="publisher-input" type="text" placeholder="Write something">
-                        <a class="publisher-btn text-info" href="#" data-abc="true">
-                            <i class="fa fa-paper-plane"></i></a>
+                        <!--                        <form id="message-form" action="/chat">-->
+                        <input id="message-input" class="publisher-input" type="text" placeholder="Write something">
+                        <button type class="publisher-btn text-info" data-abc="true" onclick="sendText()">
+                            <i class="fa fa-paper-plane"></i></button>
+                        <!--                        </form>-->
+                        <script>
+                            const socket = new WebSocket('ws://localhost:8080/chat-ws');
+                            socket.onopen = function () {
+                                console.log('connecting server')
+                            };
+
+                            // Send text to all users through the server
+                            function sendText() {
+                                // Construct a msg object containing the data the server needs to process the message from the chat client.
+                                var msg = document.getElementById("message-input").value
+
+                                // Send the msg object as a JSON-formatted string.
+                                socket.send(msg);
+
+                                // Blank the text input element, ready to receive the next line of text from the user.
+                                document.getElementById("message-input").value = "";
+                            }
+
+                            socket.onmessage = function (event) {
+                                var jsonData = JSON.parse(event.data);
+                                var messageContainer = document.getElementById('chat-content');
+                                var newMessageTag = document.createElement('div');
+                                let newMessageContent = `[${jsonData["time"]}] ${jsonData["nickname"]} : ${jsonData["message"]}`;
+                                newMessageTag.innerHTML = newMessageContent;
+                                messageContainer.appendChild(newMessageTag);
+                            }
+                        </script>
                     </div>
 
                 </div>
