@@ -379,9 +379,10 @@
                             }
 
                             socket.onmessage = function (event) {
-                                var jsonData = JSON.parse(event.data);
-                                var messageContainer = document.getElementById('chat-content');
-                                var newMessageTag = document.createElement('div');
+                                console.log("message received");
+                                let jsonData = JSON.parse(event.data);
+                                let messageContainer = document.getElementById('chat-content');
+                                let newMessageTag = document.createElement('div');
                                 let newMessageContent = `[${jsonData["time"]}] ${jsonData["nickname"]} : ${jsonData["message"]}`;
                                 newMessageTag.innerHTML = newMessageContent;
                                 messageContainer.appendChild(newMessageTag);
