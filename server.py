@@ -103,12 +103,11 @@ async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
     print(f"{nickname} is connected.")
 
     ws_queue = asyncio.Queue()
-    for websocket in app["websockets"]:
-        await ws_queue.put(websocket)
 
     redis_conn = app["redis_conn"]
-    redis_pub = app["redis_pubsub"]
-
+    redis_pubsub = app["redis_pubsub"]
+    # First get_message() returns subscribe/unsubscribe confirmation messages
+    redis_pubsub.get_message()
     try:
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
@@ -117,14 +116,16 @@ async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
                 else:
                     # publish messages incoming client
                     redis_conn.publish("lablup", msg.data)
-                    published_data = redis_pub.get_message()
-                    published_message = published_data["data"].decode()
+                    published_data = redis_pubsub.get_message()
+                    published_message = published_data["data"]
                     message = {
                         "nickname": f"{nickname}",
-                        "message": f"{published_message}",
+                        "message": f"{published_message.decode()}",
                         "time": f"{datetime.datetime.now().replace(microsecond=0)}",
                     }
                     # send connected socket
+                    for websocket in app["websockets"]:
+                        await ws_queue.put(websocket)
                     while not ws_queue.empty():
                         ws = await ws_queue.get()
                         await ws.send_json(message)
