@@ -357,7 +357,7 @@
                              src="https://img.icons8.com/color/36/000000/administrator-male.png" alt="...">
                         <!--                        <form id="message-form" action="/chat">-->
                         <input id="message-input" class="publisher-input" type="text" placeholder="Write something">
-                        <button type class="publisher-btn text-info" data-abc="true" onclick="sendText()">
+                        <button id="message-send" class="publisher-btn text-info" data-abc="true">
                             <i class="fa fa-paper-plane"></i></button>
                         <!--                        </form>-->
                         <script>
@@ -365,6 +365,9 @@
                             socket.onopen = function () {
                                 console.log('connecting server')
                             };
+
+                            let sendButton = document.getElementById("message-send");
+                            sendButton.addEventListener("click", sendText);
 
                             // Send text to all users through the server
                             function sendText() {
@@ -377,6 +380,13 @@
                                 // Blank the text input element, ready to receive the next line of text from the user.
                                 document.getElementById("message-input").value = "";
                             }
+
+                            function enterKeyPressHandler(event) {
+                                if (event.keyCode === 13) {
+                                    sendText();
+                                }
+                            }
+                             document.addEventListener("keypress", enterKeyPressHandler);
 
                             socket.onmessage = function (event) {
                                 console.log("message received");
