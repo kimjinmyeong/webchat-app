@@ -62,24 +62,6 @@
         margin-right: 8px;
     }
 
-    .btn-secondary {
-        color: #4d5259 !important;
-        background-color: #e4e7ea;
-        border-color: #e4e7ea;
-        color: #fff;
-    }
-
-    .btn-xs {
-        font-size: 11px;
-        padding: 2px 8px;
-        line-height: 18px;
-    }
-
-    .btn-xs:hover {
-        color: #fff !important;
-    }
-
-
     .card-title {
         font-family: Roboto, sans-serif;
         font-weight: 300;
@@ -99,17 +81,6 @@
         touch-action: auto;
         overflow: hidden !important;
         -ms-overflow-style: none;
-    }
-
-    .media-chat {
-        padding-right: 64px;
-        margin-bottom: 0;
-    }
-
-    .media {
-        padding: 16px 12px;
-        -webkit-transition: background-color .2s linear;
-        transition: background-color .2s linear;
     }
 
     .media .avatar {
@@ -157,64 +128,6 @@
         background-color: transparent !important;
         padding: 0;
         opacity: .8;
-    }
-
-    .media-meta-day {
-        -webkit-box-pack: justify;
-        justify-content: space-between;
-        -webkit-box-align: center;
-        align-items: center;
-        margin-bottom: 0;
-        color: #8b95a5;
-        opacity: .8;
-        font-weight: 400;
-    }
-
-    .media {
-        padding: 16px 12px;
-        -webkit-transition: background-color .2s linear;
-        transition: background-color .2s linear;
-    }
-
-    .media-meta-day::before {
-        margin-right: 16px;
-    }
-
-    .media-meta-day::before, .media-meta-day::after {
-        content: '';
-        -webkit-box-flex: 1;
-        flex: 1 1;
-        border-top: 1px solid #ebebeb;
-    }
-
-    .media-meta-day::after {
-        content: '';
-        -webkit-box-flex: 1;
-        flex: 1 1;
-        border-top: 1px solid #ebebeb;
-    }
-
-    .media-meta-day::after {
-        margin-left: 16px;
-    }
-
-    .media-chat.media-chat-reverse {
-        padding-right: 12px;
-        padding-left: 64px;
-        -webkit-box-orient: horizontal;
-        -webkit-box-direction: reverse;
-        flex-direction: row-reverse;
-    }
-
-    .media-chat {
-        padding-right: 64px;
-        margin-bottom: 0;
-    }
-
-    .media {
-        padding: 16px 12px;
-        -webkit-transition: background-color .2s linear;
-        transition: background-color .2s linear;
     }
 
     .media-chat.media-chat-reverse .media-body p {
@@ -283,11 +196,6 @@
         transition: .2s linear;
     }
 
-    .file-group {
-        position: relative;
-        overflow: hidden;
-    }
-
     .publisher-btn {
         background-color: transparent;
         border: none;
@@ -321,29 +229,6 @@
 
                     <div class="ps-container ps-theme-default ps-active-y" id="chat-content"
                          style="overflow-y: scroll !important; height:400px !important;">
-                        <!--                        <div class="media media-chat">-->
-                        <!--                            <img class="avatar" src="https://img.icons8.com/color/36/000000/administrator-male.png"-->
-                        <!--                                 alt="...">-->
-                        <!--                            <div class="media-body">-->
-                        <!--                                <p>Hi</p>-->
-                        <!--                                <p>How are you ...???</p>-->
-                        <!--                                <p>What are you doing tomorrow?<br> Can we come up a bar?</p>-->
-                        <!--                                <p class="meta">-->
-                        <!--                                    <time datetime="2018">23:58</time>-->
-                        <!--                                </p>-->
-                        <!--                            </div>-->
-                        <!--                        </div>-->
-                        <!--                        <div class="media media-meta-day">Today</div>-->
-                        <!--                        <div class="media media-chat media-chat-reverse">-->
-                        <!--                            <div class="media-body">-->
-                        <!--                                <p>Hiii, I'm good.</p>-->
-                        <!--                                <p>How are you doing?</p>-->
-                        <!--                                <p>Long time no see! Tomorrow office. will be free on sunday.</p>-->
-                        <!--                                <p class="meta">-->
-                        <!--                                    <time datetime="2018">00:06</time>-->
-                        <!--                                </p>-->
-                        <!--                            </div>-->
-                        <!--                        </div>-->
                         <div class="ps-scrollbar-x-rail" style="left: 0px; bottom: 0px;">
                             <div class="ps-scrollbar-x" tabindex="0" style="left: 0px; width: 0px;"></div>
                         </div>
@@ -372,7 +257,7 @@
                             // Send text to all users through the server
                             function sendText() {
                                 // Construct a msg object containing the data the server needs to process the message from the chat client.
-                                var msg = document.getElementById("message-input").value
+                                let msg = document.getElementById("message-input").value
 
                                 // Send the msg object as a JSON-formatted string.
                                 socket.send(msg);
@@ -386,14 +271,18 @@
                                     sendText();
                                 }
                             }
-                             document.addEventListener("keypress", enterKeyPressHandler);
+
+                            document.addEventListener("keypress", enterKeyPressHandler);
 
                             socket.onmessage = function (event) {
                                 console.log("message received");
                                 let jsonData = JSON.parse(event.data);
+                                let newMessageContent = `[${jsonData["time"]}] ${jsonData["message"]}`;
+
                                 let messageContainer = document.getElementById('chat-content');
                                 let newMessageTag = document.createElement('div');
-                                let newMessageContent = `[${jsonData["time"]}] ${jsonData["nickname"]} : ${jsonData["message"]}`;
+
+                                messageContainer.scrollTop = messageContainer.scrollHeight;
                                 newMessageTag.innerHTML = newMessageContent;
                                 messageContainer.appendChild(newMessageTag);
                             }
