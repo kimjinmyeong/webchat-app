@@ -11,7 +11,7 @@ from aiohttp_session import get_session, setup, redis_storage
 
 async def init_redis(app):
     # initialize the redis instances
-    redis_pool = redis.ConnectionPool(host="127.0.0.1", port=6379)
+    redis_pool = redis.ConnectionPool(host="redis", port=6379)
     redis_conn = await redis.Redis(connection_pool=redis_pool)
     redis_pubsub = redis_conn.pubsub()
     await redis_pubsub.subscribe("lablup")
