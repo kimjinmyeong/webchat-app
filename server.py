@@ -91,7 +91,6 @@ async def send_messages(message: str) -> None:
     messages = {
         "message": f"{message}",
         "time": f"{datetime.datetime.now().replace(microsecond=0)}",
-        "type": "normal",
     }
     for websocket in app["websockets"]:
         await ws_queue.put(websocket)
@@ -110,14 +109,12 @@ async def listen_to_redis(redis_pubsub):
 
 
 async def websocket_handler(ws: web.WebSocketResponse, nickname: str) -> None:
-    redis_conn = app["redis_conn"]
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == "close":
                 await ws.close()
             else:
-                print("accepet")
-                await redis_conn.publish("lablup", f"{nickname}: {msg.data}")
+                await app["redis_conn"].publish("lablup", f"{nickname}: {msg.data}")
 
         elif msg.type == aiohttp.WSMsgType.ERROR:
             print("ws connection closed with exception %s" % ws.exception())
@@ -140,8 +137,8 @@ async def chatroom_handler(request: web.Request) -> web.WebSocketResponse:
     await websocket_listener
 
     # Cleanup tasks and resources
-    # session.invalidate()
     await redis_conn.publish("lablup", f"{nickname} has left")
+    session.invalidate()
     app["websockets"].discard(ws)
     await app["redis_conn"].delete(nickname)
     redis_listener.cancel()
