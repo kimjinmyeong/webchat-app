@@ -52,7 +52,7 @@ docker compose up
 The project consists of the following files:
 
 - `server.py`: The main server file that handles HTTP requests, WebSocket connections, and message broadcasting.
-- `templates/index.html`: The HTML template for the chat application.
-- `templates/error.html`: The HTML template for the chat application.
-- `templates/chat.html`: The HTML template for the chat application.
+- `templates/index.html`: The HTML template for the home page.
+- `templates/error.html`: The HTML template for the error page.
+- `templates/chat.html`: The HTML template for the chat room.
 
