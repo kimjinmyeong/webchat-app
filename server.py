@@ -38,7 +38,7 @@ async def init_session(app):
 
 
 @aiohttp_jinja2.template("index.html")
-class HomeHandler(web.View):
+class HomeViewHandler(web.View):
     async def get(self):
         return
 
@@ -99,7 +99,7 @@ async def send_messages(message: str) -> None:
         await ws.send_json(messages)
 
 
-async def listen_to_redis(redis_pubsub):
+async def redis_handler(redis_pubsub):
     while True:
         try:
             message = await redis_pubsub.get_message()
@@ -138,7 +138,7 @@ async def chatroom_handler(request: web.Request) -> web.WebSocketResponse:
     redis_pubsub = app["redis_pubsub"]
 
     websocket_listener = asyncio.create_task(websocket_handler(ws, nickname))
-    redis_listener = asyncio.create_task(listen_to_redis(redis_pubsub))
+    redis_listener = asyncio.create_task(redis_handler(redis_pubsub))
 
     # Get the currently running tasks
     running_tasks = [task for task in asyncio.all_tasks() if not task.done()]
@@ -178,7 +178,7 @@ if __name__ == "__main__":
 
     app.add_routes(
         [
-            web.view("/", HomeHandler),
+            web.view("/", HomeViewHandler),
             web.get("/chat", render_chatroom),
             web.get("/chat-ws", chatroom_handler),
             web.get("/errors", render_errors),
