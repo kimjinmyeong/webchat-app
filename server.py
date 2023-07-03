@@ -101,11 +101,17 @@ async def send_messages(message: str) -> None:
 
 async def listen_to_redis(redis_pubsub):
     while True:
-        message = await redis_pubsub.get_message()
-        if message:
-            if message["type"] == "message":
-                await send_messages(message["data"].decode())
-        await asyncio.sleep(0.01)
+        try:
+            message = await redis_pubsub.get_message()
+        except RuntimeError:
+            # RuntimeError: readuntil() called while another coroutine is already waiting for incoming data
+            # Even if above error occurs, the server continues to function.
+            pass
+        finally:
+            if message:
+                if message["type"] == "message":
+                    await send_messages(message["data"].decode())
+            await asyncio.sleep(0.01)
 
 
 async def websocket_handler(ws: web.WebSocketResponse, nickname: str) -> None:
@@ -133,14 +139,23 @@ async def chatroom_handler(request: web.Request) -> web.WebSocketResponse:
 
     websocket_listener = asyncio.create_task(websocket_handler(ws, nickname))
     redis_listener = asyncio.create_task(listen_to_redis(redis_pubsub))
+
+    # Get the currently running tasks
+    running_tasks = [task for task in asyncio.all_tasks() if not task.done()]
+
+    # Print the number of running tasks
+    print("Number of running tasks:", len(running_tasks))
+
     await redis_conn.publish("lablup", f"{nickname} has entered")
     await websocket_listener
 
     # Cleanup tasks and resources
     await redis_conn.publish("lablup", f"{nickname} has left")
+
     session.invalidate()
     app["websockets"].discard(ws)
     await app["redis_conn"].delete(nickname)
+
     redis_listener.cancel()
     websocket_listener.cancel()
 
@@ -150,7 +165,6 @@ async def chatroom_handler(request: web.Request) -> web.WebSocketResponse:
 async def on_shutdown(app):
     await app["redis_conn"].flushall()
     await app["redis_conn"].close()
-
     for ws in app["websockets"]:
         await ws.close(code=WSCloseCode.GOING_AWAY, message="Server shutdown")
 
