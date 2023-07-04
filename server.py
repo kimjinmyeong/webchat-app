@@ -8,27 +8,28 @@ import redis.asyncio as redis
 from aiohttp import web, WSCloseCode
 from aiohttp_session import get_session, setup, redis_storage
 
+REDIS_HOST = "redis"
+REDIS_PORT = 6379
+
+APP_HOST = "0.0.0.0"
+APP_PORT = 8080
+
+REDIS_CHANNEL_NAME = "lablup"
+
 
 async def init_redis(app):
     # initialize the redis instances
-    redis_pool = redis.ConnectionPool(host="redis", port=6379)
-    redis_conn = await redis.Redis(connection_pool=redis_pool)
-    redis_pubsub = redis_conn.pubsub()
-    await redis_pubsub.subscribe("lablup")
-
-    # test redis connection
     try:
-        response = await redis_conn.ping()
-        if response:
-            print("Redis Connection is active.")
-        else:
-            print("Redis Connection is not active.")
+        redis_pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT)
+        redis_conn = await redis.Redis(connection_pool=redis_pool)
+        redis_pubsub = redis_conn.pubsub()
+        await redis_pubsub.subscribe(REDIS_CHANNEL_NAME)
     except redis.ConnectionError:
         print("Redis Connection error occurred.")
-
-    app["redis_pool"] = redis_pool
-    app["redis_conn"] = redis_conn
-    app["redis_pubsub"] = redis_pubsub
+    finally:
+        app["redis_pool"] = redis_pool
+        app["redis_conn"] = redis_conn
+        app["redis_pubsub"] = redis_pubsub
 
 
 async def init_session(app):
@@ -92,6 +93,7 @@ async def send_messages(message: str) -> None:
         "message": f"{message}",
         "time": f"{datetime.datetime.now().replace(microsecond=0)}",
     }
+
     for websocket in app["websockets"]:
         await ws_queue.put(websocket)
     while not ws_queue.empty():
@@ -99,7 +101,7 @@ async def send_messages(message: str) -> None:
         await ws.send_json(messages)
 
 
-async def redis_handler(redis_pubsub):
+async def redis_handler(redis_pubsub) -> None:
     while True:
         try:
             message = await redis_pubsub.get_message()
@@ -114,40 +116,35 @@ async def redis_handler(redis_pubsub):
             await asyncio.sleep(0.01)
 
 
-async def websocket_handler(ws: web.WebSocketResponse, nickname: str) -> None:
-    async for msg in ws:
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == "close":
-                await ws.close()
-            else:
-                await app["redis_conn"].publish("lablup", f"{nickname}: {msg.data}")
-
-        elif msg.type == aiohttp.WSMsgType.ERROR:
-            print("ws connection closed with exception %s" % ws.exception())
-
-
 async def chatroom_handler(request: web.Request) -> web.WebSocketResponse:
     session = await get_session(request)
     nickname = session["nickname"]
 
     ws = web.WebSocketResponse()
-    app["websockets"].add(ws)
     await ws.prepare(request)
+    app["websockets"].add(ws)
 
     redis_conn = app["redis_conn"]
     redis_pubsub = app["redis_pubsub"]
 
-    websocket_listener = asyncio.create_task(websocket_handler(ws, nickname))
-    redis_listener = asyncio.create_task(redis_handler(redis_pubsub))
+    async def websocket_handler(ws: web.WebSocketResponse, nickname: str) -> None:
+        async for msg in ws:
+            if msg.type == aiohttp.WSMsgType.TEXT:
+                if msg.data == "close":
+                    await ws.close()
+                else:
+                    await app["redis_conn"].publish("lablup", f"{nickname}: {msg.data}")
 
-    # Get the currently running tasks
-    running_tasks = [task for task in asyncio.all_tasks() if not task.done()]
+            elif msg.type == aiohttp.WSMsgType.ERROR:
+                print("ws connection closed with exception %s" % ws.exception())
 
-    # Print the number of running tasks
-    print("Number of running tasks:", len(running_tasks))
-
-    await redis_conn.publish("lablup", f"{nickname} has entered")
-    await websocket_listener
+    try:
+        redis_listener = asyncio.create_task(redis_handler(redis_pubsub))
+    except asyncio.CancelledError:
+        pass
+    finally:
+        await redis_conn.publish("lablup", f"{nickname} has entered")
+        await websocket_handler(ws, nickname)
 
     # Cleanup tasks and resources
     await redis_conn.publish("lablup", f"{nickname} has left")
@@ -155,9 +152,7 @@ async def chatroom_handler(request: web.Request) -> web.WebSocketResponse:
     session.invalidate()
     app["websockets"].discard(ws)
     await app["redis_conn"].delete(nickname)
-
     redis_listener.cancel()
-    websocket_listener.cancel()
 
     return ws
 
